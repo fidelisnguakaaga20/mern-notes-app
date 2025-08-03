@@ -1,25 +1,21 @@
+// backend/src/routes/notesRoutes.js
 import express from "express";
 import {
   createNote,
-  deleteNote,
   getAllNotes,
   getNoteById,
   updateNote,
+  deleteNote,
 } from "../controllers/noteController.js";
-import { authenticateUser } from "../middleware/authMiddleware.js";
-import ratelimiter from "../middleware/rateLimiter.js";
-// import { ratelimiter } from "../middleware/ratelimiter.js";
+import { verifyToken } from "../middleware/verifyToken.js"; // ✅ correct
 
 const router = express.Router();
 
-// Apply authentication and rate limiting to all note routes
-router.use(authenticateUser);
-router.use(ratelimiter);
-
-router.get("/", getAllNotes);
-router.post("/", createNote);
-router.get("/:id", getNoteById);
-router.put("/:id", updateNote);
-router.delete("/:id", deleteNote);
+// ✅ Protect all routes with verifyToken
+router.post("/", verifyToken, createNote);
+router.get("/", verifyToken, getAllNotes);
+router.get("/:id", verifyToken, getNoteById);
+router.put("/:id", verifyToken, updateNote);
+router.delete("/:id", verifyToken, deleteNote);
 
 export default router;

@@ -1,41 +1,37 @@
 import { useEffect, useState } from "react";
-import api from "../lib/axios";
+import api from "../lib/axios"; // ✅ Default import, not named
+import { useAuth } from "../context/AuthContext"; // ✅ Fix: useAuth, not useAuthContext
 
-const useFetchNotes = (search = "", tag = "") => { // ⬅️ removed `page` and `limit` from here
+export default function useFetchNotes(page = 1, limit = 6, search = "") {
+  const { user, loading: authLoading } = useAuth();
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const [page, setPage] = useState(1); // ✅ NEW: local state to control pagination
+  const [error, setError] = useState("");
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     const fetchNotes = async () => {
+      if (authLoading) return;
+      setLoading(true);
+      setError("");
+
       try {
-        setLoading(true);
-        const res = await api.get("/notes", {
-          params: { search, tag, page, limit: 5 }, // ✅ limit hardcoded to 5 here
+        const res = await api.get(`/notes`, {
+          params: { page, limit, search },
         });
-        console.log(res)
-        setNotes(res.data);
-        setTotalPages(res.data.totalPages);
-      } catch (error) {
-        console.error("Error fetching notes:", error);
+
+        setNotes(res.data.notes);
+        setTotalPages(res.data.totalPages || 1);
+      } catch (err) {
+        console.error("Fetch error:", err);
+        setError("Failed to fetch notes");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchNotes();
-  }, [search, tag, page]); // ✅ Now listening to internal `page` state here
+    if (user) fetchNotes();
+  }, [user, authLoading, page, limit, search]);
 
-  return {
-    notes,
-    loading,
-    totalPages,
-    setNotes,
-    page,       // ✅ expose current page
-    setPage     // ✅ expose setter for page control
-  };
-};
-
-export default useFetchNotes;
+  return { notes, loading, error, totalPages };
+}

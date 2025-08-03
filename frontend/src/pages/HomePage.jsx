@@ -1,117 +1,69 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom"; // ✅ required for the create button
 import NoteCard from "../components/NoteCard";
 import NotesNotFound from "../components/NotesNotFound";
 import useFetchNotes from "../hooks/useFetchNotes";
-import { getAuth } from "firebase/auth"; /// ✅ ADDED
-import { Link } from "react-router";
 
-const HomePage = () => {
-  const [search, setSearch] = useState("");
-  const [selectedTag, setSelectedTag] = useState("");
+export default function HomePage() {
+  const [page, setPage] = useState(1);
+  const limit = 6;
 
-  const {
-    notes,
-    loading,
-    setNotes,
-    page,
-    setPage,
-    totalPages,
-  } = useFetchNotes(search, selectedTag);
+  const { notes, loading, error, totalPages } = useFetchNotes(page, limit);
 
-  /// ✅ Log Firebase ID token once (TEMPORARY)
-  useEffect(() => {
-    const fetchToken = async () => {
-      const user = getAuth().currentUser;
-      if (user) {
-        const token = await user.getIdToken();
-        console.log("🔥 Firebase ID Token:", token);
-      } else {
-        console.warn("No user logged in.");
-      }
-    };
-    fetchToken();
-  }, []);
+  const goToNextPage = () => {
+    if (page < totalPages) setPage((prev) => prev + 1);
+  };
 
-  const safeNotes = Array.isArray(notes) ? notes : [];
-  const allTags = [...new Set(safeNotes.flatMap((note) => note.tags || []))];
-  console.log(safeNotes)
-  const handleClearFilters = () => {
-    setSearch("");
-    setSelectedTag("");
-    setPage(1);
+  const goToPrevPage = () => {
+    if (page > 1) setPage((prev) => prev - 1);
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Search + Clear */}
-      <div className="flex gap-2">
-        <input
-          type="text"
-          placeholder="Search notes..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="input input-bordered w-full"
-        />
-        <button onClick={handleClearFilters} className="btn btn-outline">
-          Clear Filters
-        </button>
+    <div className="p-4 max-w-3xl mx-auto">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Your Notes</h1>
+
+        {/* ✅ Add Create Note button */}
+        <Link
+          to="/create"
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Create Note
+        </Link>
       </div>
 
-      {/* Tags */}
-      <div className="flex gap-2 flex-wrap">
-        {allTags.map((tag, idx) => (
-          <button
-            key={idx}
-            className={`badge badge-outline ${selectedTag === tag ? "badge-primary" : ""}`}
-            onClick={() => setSelectedTag(tag === selectedTag ? "" : tag)}
-          >
-            #{tag}
-          </button>
+      {loading && <p>Loading...</p>}
+      {error && <p className="text-red-500">{error}</p>}
+      {!loading && notes.length === 0 && <NotesNotFound />}
+
+      <div className="grid gap-4">
+        {notes.map((note) => (
+          <NoteCard key={note._id} note={note} />
         ))}
       </div>
 
-      {/* Notes */}
-      {loading ? (
-        <p>Loading...</p>
-      ) : safeNotes.length === 0 ? (
-        <NotesNotFound />
-      ) : (
-        <div className="grid gap-4">
-          <Link to="/create" className="btn btn-primary">
-        Create Note
-      </Link>
-          {safeNotes.map((note) => (
-            <NoteCard key={note._id} note={note} setNotes={setNotes} />
-          ))}
+      {/* Pagination controls */}
+      {notes.length > 0 && (
+        <div className="flex justify-between mt-6">
+          <button
+            onClick={goToPrevPage}
+            disabled={page === 1}
+            className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
+          >
+            Previous
+          </button>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center gap-4 mt-8">
-              <button
-                className="btn btn-sm"
-                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                disabled={page === 1}
-              >
-                Previous
-              </button>
+          <span className="text-lg">Page {page}</span>
 
-              <span className="text-sm pt-2">
-                Page {page} of {totalPages}
-              </span>
-
-              <button
-                className="btn btn-sm"
-                onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={page === totalPages}
-              >
-                Next
-              </button>
-            </div>
-          )}
+          <button
+            onClick={goToNextPage}
+            disabled={page === totalPages}
+            className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
       )}
     </div>
   );
-};
-
-export default HomePage;
+}
