@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: mern-notes-backend
+    env: node
+    buildCommand: npm install
+    startCommand: node src/server.js
+    plan: free
