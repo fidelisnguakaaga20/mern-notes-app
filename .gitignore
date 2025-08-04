@@ -26,3 +26,4 @@ dist-ssr
 .env
 backend/firebase-service-account.json
 utils/firebase-service-account.json
+firebase-service-account.json
