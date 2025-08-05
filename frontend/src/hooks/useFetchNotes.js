@@ -1,9 +1,9 @@
+// frontend/src/hooks/useFetchNotes.js
 import { useEffect, useState } from "react";
-import api from "../lib/axios"; // ✅ Default import, not named
-import { useAuth } from "../context/AuthContext"; // ✅ Fix: useAuth, not useAuthContext
+import api from "../lib/api"; // ✅ Axios instance with interceptor
+import { waitForAuthReady } from "../context/AuthContext"; // ✅ Ensure Firebase is ready
 
-export default function useFetchNotes(page = 1, limit = 6, search = "") {
-  const { user, loading: authLoading } = useAuth();
+export default function useFetchNotes(page, limit) {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -11,27 +11,28 @@ export default function useFetchNotes(page = 1, limit = 6, search = "") {
 
   useEffect(() => {
     const fetchNotes = async () => {
-      if (authLoading) return;
       setLoading(true);
       setError("");
 
       try {
-        const res = await api.get(`/notes`, {
-          params: { page, limit, search },
+        await waitForAuthReady(); // ✅ Wait for Firebase auth to be ready
+
+        const res = await api.get("/notes", {
+          params: { page, limit },
         });
 
         setNotes(res.data.notes);
-        setTotalPages(res.data.totalPages || 1);
+        setTotalPages(res.data.totalPages);
       } catch (err) {
-        console.error("Fetch error:", err);
-        setError("Failed to fetch notes");
+        console.error("Error fetching notes:", err);
+        setError("Failed to fetch notes"); // ✅ This was showing on your UI
       } finally {
         setLoading(false);
       }
     };
 
-    if (user) fetchNotes();
-  }, [user, authLoading, page, limit, search]);
+    fetchNotes();
+  }, [page, limit]);
 
   return { notes, loading, error, totalPages };
 }

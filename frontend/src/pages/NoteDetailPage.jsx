@@ -8,10 +8,10 @@ import { useAuth } from "../context/AuthContext";
 
 const NoteDetailPage = () => {
   const [note, setNote] = useState(null);
-  const [loadingNote, setLoadingNote] = useState(true); // ✅ renamed
+  const [loadingNote, setLoadingNote] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const { user, loading: authLoading } = useAuth(); // ✅ avoid conflict
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -21,8 +21,12 @@ const NoteDetailPage = () => {
 
   useEffect(() => {
     const fetchNote = async () => {
+      setLoadingNote(true);
       try {
-        const res = await api.get(`/notes/${id}`);
+        const token = await user.getIdToken(); // ✅ GET Firebase token
+        const res = await api.get(`/notes/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }, // ✅ Secure request
+        });
         setNote(res.data);
       } catch (error) {
         console.log("Error in fetching note", error);
@@ -32,14 +36,17 @@ const NoteDetailPage = () => {
       }
     };
 
-    fetchNote();
-  }, [id]);
+    if (user) fetchNote(); // ✅ Only run if user is loaded
+  }, [id, user]);
 
   const handleDelete = async () => {
     if (!window.confirm("Are you sure you want to delete this note?")) return;
 
     try {
-      await api.delete(`/notes/${id}`);
+      const token = await user.getIdToken(); // ✅ Secure delete
+      await api.delete(`/notes/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       toast.success("Note deleted");
       navigate("/");
     } catch (error) {
@@ -56,7 +63,12 @@ const NoteDetailPage = () => {
 
     setSaving(true);
     try {
-      await api.put(`/notes/${id}`, { title, content });
+      const token = await user.getIdToken(); // ✅ Secure update
+      await api.put(
+        `/notes/${id}`,
+        { title, content },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       toast.success("Note updated successfully");
     } catch (error) {
       console.log("Error updating the note:", error);
@@ -97,7 +109,11 @@ const NoteDetailPage = () => {
                 <NoteForm
                   loading={saving}
                   onSubmit={handleSave}
-                  initialValues={{ title: note.title, content: note.content }}
+                  initialValues={{
+                    title: note.title,
+                    content: note.content,
+                    tags: note.tags?.join(", ") || "", // ✅ Keep tags if needed
+                  }}
                 />
               )}
             </div>
