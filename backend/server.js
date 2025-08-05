@@ -1,31 +1,28 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import { connectDB } from './config/db.js'; // Make sure the path and `.js` are correct
-import noteRoutes from './routes/noteRoutes.js'; // Adjust if needed
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import { connectDB } from "./utils/db.js"; // adjust path if different
+import noteRoutes from "./routes/noteRoutes.js"; // adjust path if different
 
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 8000;
 
+// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Root route for Render test
-app.get('/', (req, res) => {
-  res.send('Backend is live');
+// Routes
+app.get("/", (req, res) => {
+  res.send("API is running...");
 });
 
-// Notes routes
-app.use('/api/notes', noteRoutes);
+app.use("/api/notes", noteRoutes);
 
-// Start server
-const PORT = process.env.PORT || 10000;
-
+// Connect DB and start server
 connectDB().then(() => {
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
   });
-}).catch((err) => {
-  console.error('MongoDB connection failed:', err);
 });
