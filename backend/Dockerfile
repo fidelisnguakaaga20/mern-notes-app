@@ -4,16 +4,16 @@ FROM node:18
 # Set working directory
 WORKDIR /app
 
-# Copy backend package files
-COPY backend/package*.json ./
+# Copy only package files
+COPY package*.json ./
 
-# Install backend dependencies
+# Install dependencies
 RUN npm install
 
-# Copy the rest of the backend code
-COPY backend .
+# Copy rest of the backend code
+COPY . .
 
-# Set working directory to src to run server.js
+# Set working directory to where server.js is
 WORKDIR /app/src
 
 # Expose port
