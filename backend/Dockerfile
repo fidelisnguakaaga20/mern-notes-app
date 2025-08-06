@@ -5,13 +5,13 @@ FROM node:18
 WORKDIR /app
 
 # Copy only package files
-COPY ./backend/package*.json ./
+COPY package*.json ./
 
 # Install dependencies
 RUN npm install
 
 # Copy the rest of the backend code
-COPY ./backend .
+COPY . .
 
 # Set working directory to src to run server.js
 WORKDIR /app/src
